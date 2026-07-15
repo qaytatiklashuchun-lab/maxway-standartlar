@@ -283,6 +283,34 @@ input[type=range] {
 .wo-tap-hint { position:absolute; bottom:32px; left:0; right:0; font-size:0.72rem; font-weight:800; text-transform:uppercase; letter-spacing:1.2px; opacity:0.85; animation: woPulse 1.5s ease-in-out infinite; }
 @keyframes woPulse { 0%,100%{opacity:0.5} 50%{opacity:1} }
 
+.login-overlay {
+  position: fixed; inset: 0; z-index: 999998;
+  background: linear-gradient(160deg, var(--bg-1), var(--bg-2) 55%, #2f2149);
+  display: none; align-items: center; justify-content: center; padding: 24px;
+}
+.login-card {
+  width: 100%; max-width: 360px; text-align: center; box-sizing: border-box;
+  background: var(--glass); border: 1.5px solid var(--glass-border);
+  border-radius: 24px; padding: 36px 26px; backdrop-filter: blur(10px);
+  animation: woIconPop 0.45s var(--spring) both;
+}
+.login-logo { font-family:'Montserrat',sans-serif; font-weight:900; font-size:1.7rem; color:var(--ink); margin-bottom:6px; letter-spacing:0.5px; }
+.login-logo span { color: var(--yellow); }
+.login-sub { font-size:0.85rem; color: var(--ink-dim); margin-bottom: 26px; line-height:1.5; }
+.login-input {
+  width:100%; background: rgba(255,255,255,0.06); border:1.5px solid var(--glass-border);
+  border-radius:13px; padding:13px 16px; color:var(--ink); font-family:'Open Sans',sans-serif;
+  font-size:0.92rem; outline:none; margin-bottom:12px; box-sizing:border-box;
+}
+.login-input:focus { border-color: var(--purple); }
+.login-err { color: var(--wrong); font-size:0.78rem; font-weight:700; margin: -2px 0 12px; display: none; }
+.login-btn {
+  width:100%; background: linear-gradient(135deg, var(--yellow), #FFE066); border:none;
+  border-radius:13px; padding:14px; color:#241A38; font-family:'Montserrat',sans-serif;
+  font-weight:800; font-size:0.95rem; cursor:pointer; margin-top:4px;
+}
+.login-hint { font-size: 0.72rem; color: var(--ink-faint); margin-top: 18px; line-height: 1.5; }
+
 .nav-row { display: flex; gap: 10px; margin-top: 4px; }
 .nav-btn { flex: 1; padding: 15px; border: none; border-radius: 14px; font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 0.92rem; cursor: pointer; transition: transform 0.22s var(--spring), background 0.15s; -webkit-tap-highlight-color: transparent; }
 .nav-btn:active { transform: scale(0.95) !important; }
@@ -985,6 +1013,39 @@ function saveProfileName() {
   localStorage.setItem('mx_user_contact', contact);
   initProfile();
 }
+
+// ============================================================
+// LOGIN GATE — birinchi marta (yoki telegram-bot havolasisiz) kirganda
+// ism va telefon raqamini so'raydi.
+// ============================================================
+function hasProfile() {
+  return !!(getUserName().trim() && getUserContact().trim());
+}
+function maybeShowLogin() {
+  if (hasProfile()) return;
+  document.getElementById('login-overlay').style.display = 'flex';
+}
+function submitLogin() {
+  const ism = document.getElementById('login-ism-input').value.trim();
+  const nomer = document.getElementById('login-nomer-input').value.trim();
+  const digits = nomer.replace(/\D/g, '');
+  const errBox = document.getElementById('login-err');
+  if (!ism) {
+    errBox.textContent = 'Iltimos, ismingizni kiriting.';
+    errBox.style.display = 'block';
+    return;
+  }
+  if (digits.length < 7) {
+    errBox.textContent = "Iltimos, to'g'ri telefon raqam kiriting.";
+    errBox.style.display = 'block';
+    return;
+  }
+  errBox.style.display = 'none';
+  localStorage.setItem('mx_user_name', ism);
+  localStorage.setItem('mx_user_contact', nomer);
+  document.getElementById('login-overlay').style.display = 'none';
+  initProfile();
+}
 function resetHistory() {
   if (!confirm("Butun tarixni o'chirishni xohlaysizmi? Bu amalni ortga qaytarib bo'lmaydi.")) return;
   localStorage.removeItem('mx_history');
@@ -1609,6 +1670,7 @@ function goBackBattle() {
 // INIT
 // ============================================================
 initProfile();
+maybeShowLogin();
 
 </script>
   <div class="wrong-overlay" id="wrong-overlay" onclick="dismissMissOverlay()">
@@ -1617,6 +1679,18 @@ initProfile();
     <div class="wo-correct" id="wo-correct"></div>
     <div class="wo-expl" id="wo-expl"></div>
     <div class="wo-tap-hint">Davom etish uchun ekranga teging</div>
+  </div>
+
+  <div class="login-overlay" id="login-overlay">
+    <div class="login-card">
+      <div class="login-logo">MAX<span>WAY</span></div>
+      <div class="login-sub">Davom etish uchun ismingiz va telefon raqamingizni kiriting</div>
+      <input type="text" class="login-input" id="login-ism-input" placeholder="Ismingiz" maxlength="24">
+      <input type="tel" class="login-input" id="login-nomer-input" placeholder="Telefon raqamingiz (+998...)" maxlength="20" onkeydown="if(event.key==='Enter') submitLogin()">
+      <div class="login-err" id="login-err"></div>
+      <button class="login-btn" onclick="submitLogin()">Kirish →</button>
+      <div class="login-hint">Ma'lumotlaringiz faqat shu qurilmada, profilingizda saqlanadi.</div>
+    </div>
   </div>
 </body>
 </html>
