@@ -411,16 +411,46 @@
                 <div id="director-shift-controls" style="margin-bottom: 15px; display: none;">
                     <button class="action-btn" onclick="openShiftModal()">+ 1 Haftalik jadval tuzish / tahrirlash</button>
                 </div>
+                <div id="my-shift-status" style="margin-bottom: 15px;"></div>
                 <div id="shift-list-container"></div>
             </div>
 
             <!-- TAB 4: PROFIL -->
             <div id="tab-profile" class="tab-content">
-                <div class="empty-page">
+                <div class="empty-page" style="padding-top: 40px;">
                     <h2 id="profile-name-display">Direktor</h2>
                     <p id="profile-role-display" style="color: #fccf0d; margin-top: 5px;">Asosiy Admin</p>
-                    <button class="action-btn" style="margin-top: 30px; background: #e74c3c; color: white;" onclick="logout()">Tizimdan chiqish</button>
                 </div>
+
+                <div id="profile-selfservice" style="display:none; margin-top:20px; text-align:left;">
+                    <div class="input-group">
+                        <label>Telefon raqami</label>
+                        <input type="tel" id="profile-phone-input" placeholder="+998 90 123 45 67">
+                    </div>
+                    <div class="input-group">
+                        <label>Soatlik stavka (so'm)</label>
+                        <input type="number" id="profile-rate-input" placeholder="Masalan: 15000">
+                    </div>
+                    <button class="action-btn" onclick="saveProfileSelfService()">💾 Ma'lumotlarni saqlash</button>
+                    <button class="action-btn" style="background: rgba(255,255,255,0.1); color: white;" onclick="openEmpPasswordModal()">🔑 Parolni almashtirish</button>
+                </div>
+
+                <div id="profile-director-controls" style="display:none; margin-top:20px;">
+                    <button class="action-btn" style="background: rgba(255,255,255,0.1); color: white;" onclick="openDirectorPasswordModal()">🔑 Parolni almashtirish</button>
+                </div>
+
+                <button class="action-btn" style="margin-top: 20px; background: #e74c3c; color: white;" onclick="logout()">Tizimdan chiqish</button>
+            </div>
+
+            <!-- TAB 5: ISH SOATLARI (faqat direktor) -->
+            <div id="tab-attendance" class="tab-content">
+                <div id="attendance-controls" style="margin-bottom: 15px;">
+                    <div class="input-group">
+                        <label>Sanani tanlang</label>
+                        <input type="date" id="attendance-date-picker" onchange="renderAttendanceTab(this.value)">
+                    </div>
+                </div>
+                <div id="attendance-list-container"></div>
             </div>
 
             <!-- Pastki Taskbar -->
@@ -436,6 +466,10 @@
                 <div class="nav-item" onclick="switchTab(2, this)">
                     <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
                     <span>Smenalar</span>
+                </div>
+                <div class="nav-item" id="nav-attendance-btn" style="display:none;" onclick="switchTab(4, this)">
+                    <svg viewBox="0 0 24 24"><path d="M12 8v4l3 3"></path><circle cx="12" cy="12" r="9"></circle></svg>
+                    <span>Ish soati</span>
                 </div>
                 <div class="nav-item" onclick="switchTab(3, this)">
                     <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
@@ -495,9 +529,81 @@
                 <label>Parol</label>
                 <input type="password" id="emp-password" placeholder="Parol kiriting">
             </div>
+            <div class="input-group">
+                <label>Telefon raqami</label>
+                <input type="tel" id="emp-phone" placeholder="+998 90 123 45 67">
+            </div>
+            <div class="input-group">
+                <label>Soatlik stavka (so'm) - ixtiyoriy</label>
+                <input type="number" id="emp-rate" placeholder="Masalan: 15000">
+            </div>
             <div class="modal-buttons">
                 <button class="cancel-btn" onclick="closeEmpModal()">Bekor qilish</button>
                 <button class="login-btn" style="margin-top:0; flex:1;" onclick="saveEmployee()">Saqlash</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: DIREKTOR PAROLINI ALMASHTIRISH -->
+    <div id="director-password-modal" class="modal">
+        <div class="modal-content">
+            <h2>Parolni almashtirish</h2>
+            <div class="input-group">
+                <label>Joriy parol</label>
+                <input type="password" id="dp-old-password" placeholder="Joriy parolni kiriting">
+            </div>
+            <div class="input-group">
+                <label>Yangi parol</label>
+                <input type="password" id="dp-new-password" placeholder="Yangi parolni kiriting">
+            </div>
+            <div class="input-group">
+                <label>Yangi parolni tasdiqlang</label>
+                <input type="password" id="dp-confirm-password" placeholder="Yangi parolni qayta kiriting">
+            </div>
+            <div class="modal-buttons">
+                <button class="cancel-btn" onclick="closeDirectorPasswordModal()">Bekor qilish</button>
+                <button class="login-btn" style="margin-top:0; flex:1;" onclick="changeDirectorPassword()">Saqlash</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: XODIM PAROLINI ALMASHTIRISH -->
+    <div id="emp-password-modal" class="modal">
+        <div class="modal-content">
+            <h2>Parolni almashtirish</h2>
+            <div class="input-group">
+                <label>Joriy parol</label>
+                <input type="password" id="ep-old-password" placeholder="Joriy parolni kiriting">
+            </div>
+            <div class="input-group">
+                <label>Yangi parol</label>
+                <input type="password" id="ep-new-password" placeholder="Yangi parolni kiriting">
+            </div>
+            <div class="input-group">
+                <label>Yangi parolni tasdiqlang</label>
+                <input type="password" id="ep-confirm-password" placeholder="Yangi parolni qayta kiriting">
+            </div>
+            <div class="modal-buttons">
+                <button class="cancel-btn" onclick="closeEmpPasswordModal()">Bekor qilish</button>
+                <button class="login-btn" style="margin-top:0; flex:1;" onclick="changeEmpPassword()">Saqlash</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: YUZNI TASDIQLASH (SMENA BOSHLASH) -->
+    <div id="face-modal" class="modal">
+        <div class="modal-content">
+            <h2 id="face-modal-title">Yuzni tasdiqlash</h2>
+            <p style="color:#d1d5db; font-size:12px; text-align:center; margin-bottom:10px;">Smenani boshlash uchun kamera orqali yuzingizni tasdiqlang</p>
+            <div style="background:#000; border-radius:16px; overflow:hidden; position:relative; width:100%; aspect-ratio:1/1; max-width:280px; margin:0 auto;">
+                <video id="face-video" autoplay playsinline muted style="width:100%; height:100%; object-fit:cover; transform:scaleX(-1);"></video>
+                <canvas id="face-canvas" style="display:none;"></canvas>
+                <img id="face-captured-img" style="display:none; width:100%; height:100%; object-fit:cover;">
+            </div>
+            <p id="face-status-text" style="color:#fccf0d; font-size:12px; text-align:center; margin-top:10px;">Kamera yuklanmoqda...</p>
+            <div class="modal-buttons">
+                <button class="cancel-btn" onclick="closeFaceModal()">Bekor qilish</button>
+                <button class="login-btn" id="face-capture-btn" style="margin-top:0; flex:1;" onclick="captureFaceAndConfirm()">📸 Suratga olish</button>
             </div>
         </div>
     </div>
@@ -561,8 +667,9 @@
 
         window.employees = [];
         window.weeklyShifts = {};
-        window.savedValues = {};
-        window.submittedValues = null;
+        window.dailyRecords = {}; // { 'YYYY-MM-DD': { savedValues:{}, submittedValues:null } }
+        window.attendance = {}; // { 'YYYY-MM-DD': { empName: {start:'HH:MM:SS', end:'HH:MM:SS'} } }
+        window.directorPassword = '1234';
         window.currentLoggedInUser = null;
         window.currentMainCategory = 'kelgan';
         window.currentAstView = 'categories';
@@ -570,7 +677,33 @@
         window.activeProductKey = '';
         window.astCalcVals = { keldi: '0', kechgi: '0' };
         window.astActiveField = 'keldi';
+        window.hisobotMode = 'daily';
+        window.faceMediaStream = null;
+        window.faceCaptureDataUrl = null;
+        window.shiftTimerHandle = null;
         const weekDays = ["Dushanba", "Seshanba", "Chorshanba", "Payshanba", "Juma", "Shanba", "Yakshanba"];
+        const weekDayIndexMap = [6, 0, 1, 2, 3, 4, 5]; // JS getDay(): 0=Yak(Sun)...6=Shan(Sat) -> mapped to weekDays index
+
+        function todayStr() {
+            const d = new Date();
+            return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        }
+        function nowTimeStr() {
+            const d = new Date();
+            return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') + ':' + String(d.getSeconds()).padStart(2, '0');
+        }
+        function todayWeekDayName() {
+            return weekDays[weekDayIndexMap[new Date().getDay()]];
+        }
+        function ensureDailyRecord(dateStr) {
+            if (!window.dailyRecords[dateStr]) window.dailyRecords[dateStr] = { savedValues: {}, submittedValues: null };
+            if (!window.dailyRecords[dateStr].savedValues) window.dailyRecords[dateStr].savedValues = {};
+            return window.dailyRecords[dateStr];
+        }
+        function ensureAttendanceDay(dateStr) {
+            if (!window.attendance[dateStr]) window.attendance[dateStr] = {};
+            return window.attendance[dateStr];
+        }
 
         window.astatkaStructure = {
             "Дез модда шкаф": ["Туалетая бумага", "Тряпка дельфин", "Цветные тряпки", "Мусор пакет большой", "Мусор пакет маленький", "Перчатки желтые", "Пена для мытья рук", "Средство К-214", "Средство К-206", "Средство F-307", "Железная щетка", "Губка", "Гель для посуды", "Азелит", "Каустическая сода"],
@@ -597,9 +730,18 @@
                 await setDoc(docRef, {
                     employees: defaultEmployees,
                     weeklyShifts: {},
-                    savedValues: {},
-                    submittedValues: null
+                    dailyRecords: {},
+                    attendance: {},
+                    directorPassword: '1234'
                 });
+            } else {
+                // Eski (flat) tuzilmadan yangi (kunlik) tuzilmaga migratsiya
+                let data = snap.data();
+                if ((data.savedValues && Object.keys(data.savedValues).length) && !data.dailyRecords) {
+                    let migrated = {};
+                    migrated[todayStr()] = { savedValues: data.savedValues || {}, submittedValues: data.submittedValues || null };
+                    await setDoc(docRef, { dailyRecords: migrated, directorPassword: data.directorPassword || '1234' }, { merge: true });
+                }
             }
 
             // Real-time o'zgarishlarni kuzatish
@@ -608,8 +750,9 @@
                     let data = docSnap.data();
                     window.employees = data.employees || defaultEmployees;
                     window.weeklyShifts = data.weeklyShifts || {};
-                    window.savedValues = data.savedValues || {};
-                    window.submittedValues = data.submittedValues || null;
+                    window.dailyRecords = data.dailyRecords || {};
+                    window.attendance = data.attendance || {};
+                    window.directorPassword = data.directorPassword || '1234';
 
                     updateLoginSelect();
                     renderEmployeeList();
@@ -622,6 +765,10 @@
                         } else {
                             renderAstatkaCategories();
                         }
+                        refreshMyShiftStatus();
+                        if (document.getElementById('tab-attendance').classList.contains('active-tab')) {
+                            window.renderAttendanceTab(document.getElementById('attendance-date-picker').value || todayStr());
+                        }
                     }
                 }
                 document.getElementById('loading-screen').classList.add('hidden');
@@ -633,8 +780,9 @@
             await setDoc(docRef, {
                 employees: window.employees,
                 weeklyShifts: window.weeklyShifts,
-                savedValues: window.savedValues,
-                submittedValues: window.submittedValues
+                dailyRecords: window.dailyRecords,
+                attendance: window.attendance,
+                directorPassword: window.directorPassword
             });
         }
 
@@ -658,13 +806,13 @@
             const password = document.getElementById("password-input").value;
             
             if (selectVal === "direktor") {
-                if (password === "1234") {
+                if (password === window.directorPassword) {
                     window.currentLoggedInUser = { name: "Direktor", role: "Asosiy Admin", isDirector: true };
                     launchApp();
                 } else if (password === "") {
                     alert("Iltimos, parolni kiriting.");
                 } else {
-                    alert("Noto'g'ri parol! Direktor paroli: 1234");
+                    alert("Noto'g'ri parol!");
                 }
             } else {
                 let emp = window.employees[selectVal];
@@ -696,6 +844,10 @@
             const navTitle0 = document.getElementById('nav-title-0');
             const managerSubmitContainer = document.getElementById('manager-submit-container');
             const directorStatusBanner = document.getElementById('director-status-banner');
+            const navAttendanceBtn = document.getElementById('nav-attendance-btn');
+            const profileDirectorControls = document.getElementById('profile-director-controls');
+            const profileSelfService = document.getElementById('profile-selfservice');
+            const todayRecord = ensureDailyRecord(todayStr());
 
             if (isDirector) {
                 document.getElementById('director-dashboard-content').style.display = 'block';
@@ -705,8 +857,12 @@
                 if(navEmpBtn) navEmpBtn.style.display = 'flex';
                 if(navTitle0) navTitle0.textContent = 'Boshqaruv';
                 if(managerSubmitContainer) managerSubmitContainer.style.display = 'none';
-                if(directorStatusBanner) directorStatusBanner.style.display = window.submittedValues ? 'block' : 'none';
-                if(window.submittedValues) window.savedValues = window.submittedValues;
+                if(directorStatusBanner) directorStatusBanner.style.display = todayRecord.submittedValues ? 'block' : 'none';
+                if(navAttendanceBtn) navAttendanceBtn.style.display = 'flex';
+                if(profileDirectorControls) profileDirectorControls.style.display = 'block';
+                if(profileSelfService) profileSelfService.style.display = 'none';
+                document.getElementById('attendance-date-picker').value = todayStr();
+                window.renderAttendanceTab(todayStr());
             } else if (isManager) {
                 document.getElementById('director-dashboard-content').style.display = 'block';
                 document.getElementById('daromad-content').style.display = 'none';
@@ -716,6 +872,9 @@
                 if(navTitle0) navTitle0.textContent = 'Boshqaruv';
                 if(managerSubmitContainer) managerSubmitContainer.style.display = 'block';
                 if(directorStatusBanner) directorStatusBanner.style.display = 'none';
+                if(navAttendanceBtn) navAttendanceBtn.style.display = 'none';
+                if(profileDirectorControls) profileDirectorControls.style.display = 'none';
+                if(profileSelfService) profileSelfService.style.display = 'block';
             } else if (isUniversalOrTrainerOrKassa) {
                 document.getElementById('director-dashboard-content').style.display = 'none';
                 document.getElementById('daromad-content').style.display = 'block';
@@ -723,14 +882,26 @@
                 document.getElementById('director-shift-controls').style.display = 'none';
                 if(navEmpBtn) navEmpBtn.style.display = 'none';
                 if(navTitle0) navTitle0.textContent = 'Daromad';
+                if(navAttendanceBtn) navAttendanceBtn.style.display = 'none';
+                if(profileDirectorControls) profileDirectorControls.style.display = 'none';
+                if(profileSelfService) profileSelfService.style.display = 'block';
+            }
+
+            if (!isDirector) {
+                let myEmpIndex = window.employees.findIndex(e => e.name === window.currentLoggedInUser.name);
+                let myEmp = myEmpIndex > -1 ? window.employees[myEmpIndex] : null;
+                document.getElementById('profile-phone-input').value = (myEmp && myEmp.phone) || '';
+                document.getElementById('profile-rate-input').value = (myEmp && myEmp.hourlyRate) || '';
             }
 
             switchMainCategory('kelgan');
             renderShiftList();
             renderEmployeeList();
+            refreshMyShiftStatus();
         }
 
         window.logout = function() {
+            stopShiftTimer();
             window.currentLoggedInUser = null;
             document.getElementById('password-input').value = "";
             document.getElementById('app-section').classList.add('hidden-section');
@@ -784,9 +955,10 @@
             const container = document.getElementById('astatka-main-container');
             container.innerHTML = `<button class="action-btn" style="margin-bottom:15px;" onclick="renderAstatkaCategories()">&#8592; Kategoriyalarga qaytish</button>`;
 
+            let todaySavedValues = ensureDailyRecord(todayStr()).savedValues;
             let products = window.astatkaStructure[catName];
             products.forEach(prodName => {
-                let d = window.savedValues[prodName] || { keldi: 0, kechgi: 0, ishlatildi: 0, unit: 'dona' };
+                let d = todaySavedValues[prodName] || { keldi: 0, kechgi: 0, ishlatildi: 0, unit: 'dona' };
                 let unitLabel = d.unit || 'dona';
 
                 let infoText = '';
@@ -816,21 +988,84 @@
             });
         }
 
-        function renderHisobotView() {
+        window.setHisobotDate = function(dateStr) {
+            renderHisobotView('daily', dateStr);
+        }
+        window.setHisobotMonth = function(monthStr) {
+            renderHisobotView('monthly', null, monthStr);
+        }
+        window.switchHisobotMode = function(mode) {
+            renderHisobotView(mode);
+        }
+
+        function renderHisobotView(mode, dateStr, monthStr) {
+            mode = mode || window.hisobotMode || 'daily';
+            window.hisobotMode = mode;
+            dateStr = dateStr || todayStr();
+            monthStr = monthStr || todayStr().slice(0, 7);
+
             const container = document.getElementById('astatka-main-container');
-            container.innerHTML = `<h3 style="color:white; margin-bottom:12px; font-size:16px;">📑 Barcha mahsulotlar hisoboti</h3>`;
+
+            let toolbarHtml = `
+                <div class="employee-card" style="flex-direction: column; align-items: stretch; cursor: default; gap: 10px;">
+                    <div style="display:flex; gap: 8px;">
+                        <button class="action-btn" style="margin-bottom:0; ${mode === 'daily' ? '' : 'background: rgba(255,255,255,0.1); color:white;'}" onclick="switchHisobotMode('daily')">📅 Kunlik</button>
+                        <button class="action-btn" style="margin-bottom:0; ${mode === 'monthly' ? '' : 'background: rgba(255,255,255,0.1); color:white;'}" onclick="switchHisobotMode('monthly')">🗓️ Oylik</button>
+                    </div>
+                    ${mode === 'daily' ? `
+                        <div class="input-group" style="margin-bottom:0;">
+                            <label>Kunni tanlang</label>
+                            <input type="date" value="${dateStr}" max="${todayStr()}" onchange="setHisobotDate(this.value)">
+                        </div>
+                    ` : `
+                        <div class="input-group" style="margin-bottom:0;">
+                            <label>Oyni tanlang</label>
+                            <input type="month" value="${monthStr}" max="${todayStr().slice(0,7)}" onchange="setHisobotMonth(this.value)">
+                        </div>
+                    `}
+                </div>
+            `;
+            container.innerHTML = toolbarHtml + `<h3 style="color:white; margin: 12px 0; font-size:16px;">📑 ${mode === 'daily' ? dateStr + ' kunlik hisoboti' : monthStr + ' oylik hisoboti'}</h3>`;
 
             let totalProductsCount = 0;
             let reportHtml = '';
+
+            // Aggregatsiya funksiyasi: kunlik yoki oylik
+            function getAggregatedData(prodName) {
+                if (mode === 'daily') {
+                    let rec = window.dailyRecords[dateStr];
+                    return (rec && rec.savedValues[prodName]) || { keldi: 0, kechgi: 0, ishlatildi: 0, unit: 'dona' };
+                } else {
+                    let sum = { keldi: 0, kechgi: 0, ishlatildi: 0, unit: 'dona' };
+                    let found = false;
+                    Object.keys(window.dailyRecords).forEach(dKey => {
+                        if (dKey.slice(0, 7) === monthStr) {
+                            let d = window.dailyRecords[dKey].savedValues[prodName];
+                            if (d) {
+                                found = true;
+                                sum.keldi += parseFloat(d.keldi || 0);
+                                sum.kechgi += parseFloat(d.kechgi || 0);
+                                sum.ishlatildi += parseFloat(d.ishlatildi || 0);
+                                sum.unit = d.unit || sum.unit;
+                            }
+                        }
+                    });
+                    return found ? sum : { keldi: 0, kechgi: 0, ishlatildi: 0, unit: 'dona' };
+                }
+            }
+
+            let grandKeldi = 0, grandIshlatildi = 0;
 
             Object.keys(window.astatkaStructure).forEach(catName => {
                 let products = window.astatkaStructure[catName];
                 let productsRowsHtml = '';
 
                 products.forEach(prodName => {
-                    let d = window.savedValues[prodName] || { keldi: 0, kechgi: 0, ishlatildi: 0, unit: 'dona' };
+                    let d = getAggregatedData(prodName);
                     let unitLabel = d.unit || 'dona';
                     totalProductsCount++;
+                    grandKeldi += parseFloat(d.keldi || 0);
+                    grandIshlatildi += parseFloat(d.ishlatildi || 0);
 
                     productsRowsHtml += `
                         <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 12px;">
@@ -862,6 +1097,8 @@
             summaryCard.innerHTML = `
                 <h3 style="font-size: 16px; margin-bottom: 8px; color: #fccf0d;">📊 Umumiy ko'rsatkichlar</h3>
                 <p style="font-size: 13px;">Jami mahsulot turlari: <b>${totalProductsCount} ta</b></p>
+                <p style="font-size: 13px;">Jami kelgan (barcha mahsulot bo'yicha, birlik aralash): <b>${grandKeldi.toFixed(2)}</b></p>
+                <p style="font-size: 13px;">Jami ishlatilgan (barcha mahsulot bo'yicha, birlik aralash): <b>${grandIshlatildi.toFixed(2)}</b></p>
             `;
             container.appendChild(summaryCard);
 
@@ -872,7 +1109,8 @@
 
         window.submitAstatkaToDirector = async function() {
             if (confirm("Hamma kechgi obshiy hisobotni direktorga yuborishni tasdiqlaysizmi?")) {
-                window.submittedValues = { ...window.savedValues };
+                let todayRecord = ensureDailyRecord(todayStr());
+                todayRecord.submittedValues = { ...todayRecord.savedValues };
                 await window.saveToFirestore();
                 alert("Astatka muvaffaqiyatli Direktorga yuborildi!");
             }
@@ -881,7 +1119,8 @@
         window.openAstatkaModal = function(prodName) {
             window.activeProductKey = prodName;
             document.getElementById('astatka-modal-title').textContent = prodName;
-            let data = window.savedValues[prodName] || { keldi: '0', kechgi: '0', unit: 'dona' };
+            let todaySavedValues = ensureDailyRecord(todayStr()).savedValues;
+            let data = todaySavedValues[prodName] || { keldi: '0', kechgi: '0', unit: 'dona' };
             window.astCalcVals = { keldi: data.keldi || '0', kechgi: data.kechgi || '0' };
             document.getElementById('ast-unit-select').value = data.unit || 'dona';
 
@@ -966,7 +1205,8 @@
         }
 
         window.saveAstatkaValue = async function() {
-            let existingData = window.savedValues[window.activeProductKey] || { keldi: '0', kechgi: '0', unit: 'dona' };
+            let todaySavedValues = ensureDailyRecord(todayStr()).savedValues;
+            let existingData = todaySavedValues[window.activeProductKey] || { keldi: '0', kechgi: '0', unit: 'dona' };
             
             if (window.currentMainCategory === 'kelgan') {
                 existingData.keldi = window.astCalcVals.keldi;
@@ -979,7 +1219,7 @@
 
             let unit = document.getElementById('ast-unit-select').value;
 
-            window.savedValues[window.activeProductKey] = { 
+            todaySavedValues[window.activeProductKey] = { 
                 keldi: existingData.keldi, 
                 kechgi: existingData.kechgi, 
                 ishlatildi: ishlatildi,
@@ -1001,11 +1241,15 @@
                 document.getElementById('emp-name').value = window.employees[editIndex].name;
                 document.getElementById('emp-role').value = window.employees[editIndex].role;
                 document.getElementById('emp-password').value = window.employees[editIndex].password;
+                document.getElementById('emp-phone').value = window.employees[editIndex].phone || '';
+                document.getElementById('emp-rate').value = window.employees[editIndex].hourlyRate || '';
             } else {
                 document.getElementById('emp-modal-title').textContent = "Yangi ishchi qo'shish";
                 document.getElementById('edit-emp-index').value = "";
                 document.getElementById('emp-name').value = "";
                 document.getElementById('emp-password').value = "";
+                document.getElementById('emp-phone').value = "";
+                document.getElementById('emp-rate').value = "";
             }
             document.getElementById('employee-modal').classList.add('open');
         }
@@ -1017,14 +1261,17 @@
             const name = document.getElementById('emp-name').value.trim();
             const role = document.getElementById('emp-role').value;
             const password = document.getElementById('emp-password').value.trim();
+            const phone = document.getElementById('emp-phone').value.trim();
+            const hourlyRate = parseFloat(document.getElementById('emp-rate').value) || 0;
             const editIndex = document.getElementById('edit-emp-index').value;
 
             if (!name || !password) { alert("Barcha maydonlarni to'ldiring!"); return; }
 
             if (editIndex === "") {
-                window.employees.push({ name, role, password });
+                window.employees.push({ name, role, password, phone, hourlyRate });
             } else {
-                window.employees[editIndex] = { name, role, password };
+                let existing = window.employees[editIndex];
+                window.employees[editIndex] = { ...existing, name, role, password, phone, hourlyRate: hourlyRate || existing.hourlyRate || 0 };
             }
             await window.saveToFirestore();
             window.closeEmpModal();
@@ -1050,6 +1297,8 @@
                     <div class="employee-info">
                         <h3>${emp.name}</h3>
                         <span class="employee-role">${emp.role}</span>
+                        ${emp.phone ? `<div style="font-size:11px; color:#d1d5db; margin-top:4px;">📞 ${emp.phone}</div>` : ''}
+                        ${emp.hourlyRate ? `<div style="font-size:11px; color:#34d399; margin-top:2px;">💰 ${Number(emp.hourlyRate).toLocaleString()} so'm/soat</div>` : ''}
                     </div>
                     ${window.currentLoggedInUser && window.currentLoggedInUser.isDirector ? `
                         <div style="display: flex; gap: 10px; align-items: center;">
@@ -1060,6 +1309,280 @@
                 `;
                 container.appendChild(card);
             });
+        }
+
+        // ================= PAROLNI ALMASHTIRISH (DIREKTOR) =================
+        window.openDirectorPasswordModal = function() {
+            document.getElementById('dp-old-password').value = "";
+            document.getElementById('dp-new-password').value = "";
+            document.getElementById('dp-confirm-password').value = "";
+            document.getElementById('director-password-modal').classList.add('open');
+        }
+        window.closeDirectorPasswordModal = function() { document.getElementById('director-password-modal').classList.remove('open'); }
+
+        window.changeDirectorPassword = async function() {
+            const oldPass = document.getElementById('dp-old-password').value;
+            const newPass = document.getElementById('dp-new-password').value;
+            const confirmPass = document.getElementById('dp-confirm-password').value;
+
+            if (oldPass !== window.directorPassword) { alert("Joriy parol noto'g'ri!"); return; }
+            if (!newPass || newPass.length < 4) { alert("Yangi parol kamida 4 ta belgidan iborat bo'lishi kerak!"); return; }
+            if (newPass !== confirmPass) { alert("Yangi parollar mos kelmadi!"); return; }
+
+            window.directorPassword = newPass;
+            await window.saveToFirestore();
+            window.closeDirectorPasswordModal();
+            alert("Parol muvaffaqiyatli almashtirildi!");
+        }
+
+        // ================= PAROLNI ALMASHTIRISH (XODIM) =================
+        window.openEmpPasswordModal = function() {
+            document.getElementById('ep-old-password').value = "";
+            document.getElementById('ep-new-password').value = "";
+            document.getElementById('ep-confirm-password').value = "";
+            document.getElementById('emp-password-modal').classList.add('open');
+        }
+        window.closeEmpPasswordModal = function() { document.getElementById('emp-password-modal').classList.remove('open'); }
+
+        window.changeEmpPassword = async function() {
+            const oldPass = document.getElementById('ep-old-password').value;
+            const newPass = document.getElementById('ep-new-password').value;
+            const confirmPass = document.getElementById('ep-confirm-password').value;
+
+            let idx = window.employees.findIndex(e => e.name === window.currentLoggedInUser.name);
+            if (idx === -1) return;
+
+            if (oldPass !== window.employees[idx].password) { alert("Joriy parol noto'g'ri!"); return; }
+            if (!newPass || newPass.length < 3) { alert("Yangi parol kamida 3 ta belgidan iborat bo'lishi kerak!"); return; }
+            if (newPass !== confirmPass) { alert("Yangi parollar mos kelmadi!"); return; }
+
+            window.employees[idx].password = newPass;
+            await window.saveToFirestore();
+            window.closeEmpPasswordModal();
+            alert("Parol muvaffaqiyatli almashtirildi!");
+        }
+
+        // ================= PROFIL: TELEFON VA STAVKA (XODIM O'ZI KIRITADI) =================
+        window.saveProfileSelfService = async function() {
+            let idx = window.employees.findIndex(e => e.name === window.currentLoggedInUser.name);
+            if (idx === -1) return;
+            const phone = document.getElementById('profile-phone-input').value.trim();
+            const rate = parseFloat(document.getElementById('profile-rate-input').value) || 0;
+            window.employees[idx].phone = phone;
+            window.employees[idx].hourlyRate = rate;
+            await window.saveToFirestore();
+            alert("Ma'lumotlar saqlandi!");
+        }
+
+        // ================= SMENA: BOSHLASH / YAKUNLASH / REAL-TIME DAROMAD =================
+        function getMyTodaySchedule() {
+            let sched = window.weeklyShifts[window.currentLoggedInUser.name] || [];
+            let today = todayWeekDayName();
+            return sched.find(d => d.day === today) || null;
+        }
+
+        function refreshMyShiftStatus() {
+            if (!window.currentLoggedInUser || window.currentLoggedInUser.isDirector) return;
+            const container = document.getElementById('my-shift-status');
+            if (!container) return;
+
+            let dayInfo = getMyTodaySchedule();
+            let att = ensureAttendanceDay(todayStr())[window.currentLoggedInUser.name];
+
+            if (!dayInfo || dayInfo.status === 'off') {
+                container.innerHTML = `
+                    <div class="employee-card" style="cursor:default;">
+                        <div class="employee-info"><h3>Bugun (${todayWeekDayName()})</h3><span class="employee-role" style="background: rgba(231,76,60,0.2); color:#e74c3c;">Dam olish kuni</span></div>
+                    </div>
+                `;
+                stopShiftTimer();
+                return;
+            }
+
+            if (!att || !att.start) {
+                container.innerHTML = `
+                    <div class="employee-card" style="flex-direction:column; align-items:stretch; cursor:default;">
+                        <h3 style="color:white; margin-bottom:6px;">Bugungi smena: ${dayInfo.start} - ${dayInfo.end}</h3>
+                        <button class="action-btn" style="margin:8px 0 0 0;" onclick="startShiftFlow()">🟢 Smenani boshlash</button>
+                    </div>
+                `;
+                stopShiftTimer();
+            } else if (att.start && !att.end) {
+                container.innerHTML = `
+                    <div class="employee-card" style="flex-direction:column; align-items:stretch; cursor:default;">
+                        <h3 style="color:white; margin-bottom:6px;">Smena boshlandi: ${att.start}</h3>
+                        <p style="color:#d1d5db; font-size:12px;">Ishlangan vaqt: <span id="shift-elapsed-time" style="color:#fccf0d; font-weight:700;">00:00:00</span></p>
+                        <p style="color:#d1d5db; font-size:12px;">Hozircha ishlab topgani: <span id="shift-earnings" style="color:#34d399; font-weight:700;">0 so'm</span></p>
+                        <button class="action-btn" style="margin:8px 0 0 0; background:#e74c3c; color:white;" onclick="endShiftFlow()">🔴 Smenani yakunlash</button>
+                    </div>
+                `;
+                startShiftTimer(att.start);
+            } else {
+                let earned = computeShiftEarnings(att.start, att.end);
+                container.innerHTML = `
+                    <div class="employee-card" style="flex-direction:column; align-items:stretch; cursor:default;">
+                        <h3 style="color:white; margin-bottom:6px;">Bugungi smena yakunlandi</h3>
+                        <p style="color:#d1d5db; font-size:12px;">Kelgan: ${att.start} | Ketgan: ${att.end}</p>
+                        <p style="color:#34d399; font-size:14px; font-weight:700; margin-top:4px;">Jami ishlab topgani: ${earned.toLocaleString()} so'm</p>
+                    </div>
+                `;
+                stopShiftTimer();
+            }
+        }
+
+        function computeShiftEarnings(startStr, endStr) {
+            let rate = 0;
+            let emp = window.employees.find(e => e.name === window.currentLoggedInUser.name);
+            if (emp) rate = parseFloat(emp.hourlyRate || 0);
+            let [sh, sm, ss] = startStr.split(':').map(Number);
+            let [eh, em, es] = (endStr || nowTimeStr()).split(':').map(Number);
+            let startSec = sh * 3600 + sm * 60 + (ss || 0);
+            let endSec = eh * 3600 + em * 60 + (es || 0);
+            let diffSec = Math.max(0, endSec - startSec);
+            return Math.round((diffSec / 3600) * rate);
+        }
+
+        function startShiftTimer(startStr) {
+            stopShiftTimer();
+            window.shiftTimerHandle = setInterval(() => {
+                let [sh, sm, ss] = startStr.split(':').map(Number);
+                let startSec = sh * 3600 + sm * 60 + (ss || 0);
+                let now = new Date();
+                let nowSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+                let diff = Math.max(0, nowSec - startSec);
+                let h = String(Math.floor(diff / 3600)).padStart(2, '0');
+                let m = String(Math.floor((diff % 3600) / 60)).padStart(2, '0');
+                let s = String(diff % 60).padStart(2, '0');
+                let elapsedEl = document.getElementById('shift-elapsed-time');
+                let earnEl = document.getElementById('shift-earnings');
+                if (elapsedEl) elapsedEl.textContent = `${h}:${m}:${s}`;
+                if (earnEl) earnEl.textContent = computeShiftEarnings(startStr, nowTimeStr()).toLocaleString() + ' so\'m';
+            }, 1000);
+        }
+
+        function stopShiftTimer() {
+            if (window.shiftTimerHandle) {
+                clearInterval(window.shiftTimerHandle);
+                window.shiftTimerHandle = null;
+            }
+        }
+
+        // ================= YUZNI TASDIQLASH (KAMERA ORQALI) VA SMENANI BOSHLASH/YAKUNLASH =================
+        window.pendingShiftAction = null; // 'start' yoki 'end'
+
+        window.startShiftFlow = function() { openFaceModal('start'); }
+        window.endShiftFlow = function() {
+            if (confirm("Smenani yakunlamoqchimisiz?")) { openFaceModal('end'); }
+        }
+
+        async function openFaceModal(action) {
+            window.pendingShiftAction = action;
+            document.getElementById('face-modal-title').textContent = action === 'start' ? "Smenani boshlash - Yuzni tasdiqlash" : "Smenani yakunlash - Yuzni tasdiqlash";
+            document.getElementById('face-status-text').textContent = "Kamera yuklanmoqda...";
+            document.getElementById('face-video').style.display = 'block';
+            document.getElementById('face-captured-img').style.display = 'none';
+            document.getElementById('face-capture-btn').textContent = "📸 Suratga olish";
+            document.getElementById('face-capture-btn').onclick = captureFaceAndConfirm;
+            window.faceCaptureDataUrl = null;
+            document.getElementById('face-modal').classList.add('open');
+
+            try {
+                window.faceMediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+                document.getElementById('face-video').srcObject = window.faceMediaStream;
+                document.getElementById('face-status-text').textContent = "Yuzingizni ramka ichiga joylashtirib, suratga oling";
+            } catch (err) {
+                document.getElementById('face-status-text').textContent = "⚠️ Kameraga ruxsat berilmadi. Iltimos, brauzer sozlamalaridan kameraga ruxsat bering.";
+            }
+        }
+
+        window.closeFaceModal = function() {
+            if (window.faceMediaStream) {
+                window.faceMediaStream.getTracks().forEach(track => track.stop());
+                window.faceMediaStream = null;
+            }
+            document.getElementById('face-modal').classList.remove('open');
+        }
+
+        window.captureFaceAndConfirm = function() {
+            const video = document.getElementById('face-video');
+            const canvas = document.getElementById('face-canvas');
+            if (!video.videoWidth) { alert("Kamera hali tayyor emas, biroz kuting."); return; }
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+            window.faceCaptureDataUrl = canvas.toDataURL('image/jpeg', 0.6);
+
+            document.getElementById('face-captured-img').src = window.faceCaptureDataUrl;
+            document.getElementById('face-captured-img').style.display = 'block';
+            document.getElementById('face-video').style.display = 'none';
+            document.getElementById('face-status-text').textContent = "Surat olindi. Tasdiqlaysizmi?";
+            document.getElementById('face-capture-btn').textContent = "✅ Tasdiqlash";
+            document.getElementById('face-capture-btn').onclick = confirmShiftAction;
+        }
+
+        async function confirmShiftAction() {
+            const dateStr = todayStr();
+            const attDay = ensureAttendanceDay(dateStr);
+            const empName = window.currentLoggedInUser.name;
+
+            if (window.pendingShiftAction === 'start') {
+                attDay[empName] = attDay[empName] || {};
+                attDay[empName].start = nowTimeStr();
+            } else if (window.pendingShiftAction === 'end') {
+                if (attDay[empName]) attDay[empName].end = nowTimeStr();
+            }
+
+            await window.saveToFirestore();
+            window.closeFaceModal();
+            refreshMyShiftStatus();
+        }
+
+        // ================= DIREKTOR: ISH SOATLARI (KELGAN/KETGAN VAQTLAR) =================
+        window.renderAttendanceTab = function(dateStr) {
+            if (!window.currentLoggedInUser || !window.currentLoggedInUser.isDirector) return;
+            dateStr = dateStr || todayStr();
+            const picker = document.getElementById('attendance-date-picker');
+            if (picker && picker.value !== dateStr) picker.value = dateStr;
+
+            const container = document.getElementById('attendance-list-container');
+            container.innerHTML = "";
+            let dayAttendance = window.attendance[dateStr] || {};
+
+            let anyone = false;
+            window.employees.forEach(emp => {
+                let sched = window.weeklyShifts[emp.name] || [];
+                let d = new Date(dateStr + 'T00:00:00');
+                let weekDayName = weekDays[weekDayIndexMap[d.getDay()]];
+                let dayInfo = sched.find(s => s.day === weekDayName);
+                if (!dayInfo || dayInfo.status === 'off') return; // shu kuni smenasi yo'q
+
+                anyone = true;
+                let att = dayAttendance[emp.name];
+                let statusHtml = '';
+                if (!att || !att.start) {
+                    statusHtml = `<span class="employee-role" style="background: rgba(231,76,60,0.2); color:#e74c3c;">Ishga kelmadi</span>`;
+                } else if (att.start && !att.end) {
+                    statusHtml = `<span class="employee-role" style="background: rgba(252,207,13,0.2); color:#fccf0d;">Keldi: ${att.start} (hali ishda)</span>`;
+                } else {
+                    statusHtml = `<span class="employee-role" style="background: rgba(52,211,153,0.2); color:#34d399;">Keldi: ${att.start} | Ketdi: ${att.end}</span>`;
+                }
+
+                let card = document.createElement('div');
+                card.className = 'employee-card';
+                card.style.cursor = 'default';
+                card.innerHTML = `
+                    <div class="employee-info">
+                        <h3>${emp.name}</h3>
+                        <span style="font-size:11px; color:#d1d5db;">${emp.role} | Jadval: ${dayInfo.start} - ${dayInfo.end}</span><br>
+                        ${statusHtml}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+
+            if (!anyone) {
+                container.innerHTML = `<div class="empty-page" style="padding-top:60px;"><h2>Ma'lumot yo'q</h2><p>Bu kunga rejalashtirilgan smena topilmadi</p></div>`;
+            }
         }
 
         window.openShiftModal = function() {
@@ -1170,7 +1693,7 @@
             const tabs = document.querySelectorAll('.tab-content');
             const navItems = document.querySelectorAll('.nav-item');
             const isUniversalOrTrainerOrKassa = window.currentLoggedInUser && (window.currentLoggedInUser.role === 'Universal xodim' || window.currentLoggedInUser.role === 'Trener' || window.currentLoggedInUser.role === 'Kassa razdacha');
-            const titles = isUniversalOrTrainerOrKassa ? ["Daromad", "Ishchilar", "Smenalar", "Profil"] : ["Boshqaruv", "Ishchilar", "Smenalar", "Profil"];
+            const titles = isUniversalOrTrainerOrKassa ? ["Daromad", "Ishchilar", "Smenalar", "Profil", "Ish soatlari"] : ["Boshqaruv", "Ishchilar", "Smenalar", "Profil", "Ish soatlari"];
 
             tabs.forEach(tab => tab.classList.remove('active-tab'));
             navItems.forEach(item => item.classList.remove('active'));
