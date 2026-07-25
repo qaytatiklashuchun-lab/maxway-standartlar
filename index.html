@@ -364,7 +364,7 @@
             <div id="tab-dashboard" class="tab-content active-tab">
                 <div id="director-dashboard-content">
                     
-                    <div class="main-cats-grid">
+                    <div class="main-cats-grid" id="main-cats-grid">
                         <div class="main-cat-btn active" id="mcat-btn-kelgan" onclick="switchMainCategory('kelgan')">
                             <h4>📦 Kelgan mahsulotlar</h4>
                         </div>
@@ -373,6 +373,9 @@
                         </div>
                         <div class="main-cat-btn" id="mcat-btn-hisobot" onclick="switchMainCategory('hisobot')">
                             <h4>📑 Hisobot</h4>
+                        </div>
+                        <div class="main-cat-btn" id="mcat-btn-sklad" style="display:none;" onclick="switchMainCategory('sklad')">
+                            <h4>🏭 Sklad</h4>
                         </div>
                     </div>
 
@@ -395,6 +398,7 @@
                         <h3 style="color: #fccf0d; font-size: 26px; margin: 10px 0;">4,250,000 UZS</h3>
                         <p style="color: #9ca3af; font-size: 12px;">So'nggi yangilanish: Hozir</p>
                     </div>
+                    <div id="my-shift-status" style="margin-top: 15px; text-align: left;"></div>
                 </div>
             </div>
 
@@ -411,7 +415,6 @@
                 <div id="director-shift-controls" style="margin-bottom: 15px; display: none;">
                     <button class="action-btn" onclick="openShiftModal()">+ 1 Haftalik jadval tuzish / tahrirlash</button>
                 </div>
-                <div id="my-shift-status" style="margin-bottom: 15px;"></div>
                 <div id="shift-list-container"></div>
             </div>
 
@@ -431,7 +434,8 @@
                         <label>Soatlik stavka (so'm)</label>
                         <input type="number" id="profile-rate-input" placeholder="Masalan: 15000">
                     </div>
-                    <button class="action-btn" onclick="saveProfileSelfService()">💾 Ma'lumotlarni saqlash</button>
+                    <button class="action-btn" id="profile-selfservice-save-btn" onclick="saveProfileSelfService()">💾 Ma'lumotlarni saqlash</button>
+                    <p id="profile-selfservice-lock-msg" style="display:none; color:#9ca3af; font-size:11px; text-align:center; margin: -10px 0 15px 0;">🔒 Telefon va stavka qulflangan. O'zgartirish uchun Direktor yoki Adminga murojaat qiling.</p>
                     <button class="action-btn" style="background: rgba(255,255,255,0.1); color: white;" onclick="openEmpPasswordModal()">🔑 Parolni almashtirish</button>
                 </div>
 
@@ -608,6 +612,31 @@
         </div>
     </div>
 
+    <!-- MODAL: SKLADGA YANGI TOVAR QO'SHISH -->
+    <div id="sklad-modal" class="modal">
+        <div class="modal-content">
+            <h2>Yangi tovar qo'shish</h2>
+            <div class="input-group">
+                <label>Kategoriya</label>
+                <select id="sklad-cat-select" onchange="toggleSkladNewCatInput()">
+                    <option value="__new__">+ Yangi kategoriya yaratish</option>
+                </select>
+            </div>
+            <div class="input-group" id="sklad-new-cat-group">
+                <label>Yangi kategoriya nomi</label>
+                <input type="text" id="sklad-new-cat-name" placeholder="Masalan: Yangi ombor">
+            </div>
+            <div class="input-group">
+                <label>Tovar nomi</label>
+                <input type="text" id="sklad-product-name" placeholder="Masalan: Coca Cola 0.5L">
+            </div>
+            <div class="modal-buttons">
+                <button class="cancel-btn" onclick="closeAddProductModal()">Bekor qilish</button>
+                <button class="login-btn" style="margin-top:0; flex:1;" onclick="saveNewProduct()">Qo'shish</button>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL: 1 HAFTALIK JADVAL -->
     <div id="shift-modal" class="modal">
         <div class="modal-content">
@@ -704,8 +733,11 @@
             if (!window.attendance[dateStr]) window.attendance[dateStr] = {};
             return window.attendance[dateStr];
         }
+        function isDirectorOrAdmin() {
+            return window.currentLoggedInUser && (window.currentLoggedInUser.isDirector || window.currentLoggedInUser.role === 'Admin');
+        }
 
-        window.astatkaStructure = {
+        let defaultAstatkaStructure = {
             "Дез модда шкаф": ["Туалетая бумага", "Тряпка дельфин", "Цветные тряпки", "Мусор пакет большой", "Мусор пакет маленький", "Перчатки желтые", "Пена для мытья рук", "Средство К-214", "Средство К-206", "Средство F-307", "Железная щетка", "Губка", "Гель для посуды", "Азелит", "Каустическая сода"],
             "Кола холодильник": ["onaqua 0.5 л", "Fuse tea 0.5 W.Melon", "Fuste tea 0.5 лимон", "Fuse tea 0.5 манго-ананас", "Fus tea 0.5 манго-ромашка", "Fuse tea 0.5 персик", "Кола Zero 0.5", "Фанта 0.5", "Спрайт 0.5", "Кола 0.5 пет", "Кола 1.5 пет", "Сироп Гранат THE SYRUP", "Сироп Манго THE SYRUP", "Сироп Манго-Маракуйя", "Сан Себастьян", "Тирамису", "Мусс Три школада", "Пончики", "Сок мультифрукт 1л", "Сок яблоко 1л"],
             "Лар морозильник": ["Котлет", "Наггетсы темпурные", "Картофель по деревенски", "Картофель фри"],
@@ -732,16 +764,29 @@
                     weeklyShifts: {},
                     dailyRecords: {},
                     attendance: {},
-                    directorPassword: '1234'
+                    directorPassword: '1234',
+                    astatkaStructure: defaultAstatkaStructure
                 });
             } else {
                 // Eski (flat) tuzilmadan yangi (kunlik) tuzilmaga migratsiya
                 let data = snap.data();
+                let mergeUpdate = {};
+                let needsMerge = false;
                 if ((data.savedValues && Object.keys(data.savedValues).length) && !data.dailyRecords) {
                     let migrated = {};
                     migrated[todayStr()] = { savedValues: data.savedValues || {}, submittedValues: data.submittedValues || null };
-                    await setDoc(docRef, { dailyRecords: migrated, directorPassword: data.directorPassword || '1234' }, { merge: true });
+                    mergeUpdate.dailyRecords = migrated;
+                    needsMerge = true;
                 }
+                if (!data.astatkaStructure) {
+                    mergeUpdate.astatkaStructure = defaultAstatkaStructure;
+                    needsMerge = true;
+                }
+                if (!data.directorPassword) {
+                    mergeUpdate.directorPassword = data.directorPassword || '1234';
+                    needsMerge = true;
+                }
+                if (needsMerge) await setDoc(docRef, mergeUpdate, { merge: true });
             }
 
             // Real-time o'zgarishlarni kuzatish
@@ -753,6 +798,7 @@
                     window.dailyRecords = data.dailyRecords || {};
                     window.attendance = data.attendance || {};
                     window.directorPassword = data.directorPassword || '1234';
+                    window.astatkaStructure = data.astatkaStructure || defaultAstatkaStructure;
 
                     updateLoginSelect();
                     renderEmployeeList();
@@ -760,6 +806,8 @@
                     if (window.currentLoggedInUser) {
                         if (window.currentMainCategory === 'hisobot') {
                             renderHisobotView();
+                        } else if (window.currentMainCategory === 'sklad') {
+                            renderSkladView();
                         } else if (window.currentAstView === 'products') {
                             renderAstatkaProducts(window.selectedCategoryKey);
                         } else {
@@ -782,7 +830,8 @@
                 weeklyShifts: window.weeklyShifts,
                 dailyRecords: window.dailyRecords,
                 attendance: window.attendance,
-                directorPassword: window.directorPassword
+                directorPassword: window.directorPassword,
+                astatkaStructure: window.astatkaStructure
             });
         }
 
@@ -838,6 +887,7 @@
 
             const isUniversalOrTrainerOrKassa = (window.currentLoggedInUser.role === 'Universal xodim' || window.currentLoggedInUser.role === 'Trener' || window.currentLoggedInUser.role === 'Kassa razdacha');
             const isManager = (window.currentLoggedInUser.role === 'Meneger');
+            const isAdmin = (window.currentLoggedInUser.role === 'Admin');
             const isDirector = window.currentLoggedInUser.isDirector;
 
             const navEmpBtn = document.getElementById('nav-emp-btn');
@@ -847,6 +897,8 @@
             const navAttendanceBtn = document.getElementById('nav-attendance-btn');
             const profileDirectorControls = document.getElementById('profile-director-controls');
             const profileSelfService = document.getElementById('profile-selfservice');
+            const skladBtn = document.getElementById('mcat-btn-sklad');
+            const mainCatsGrid = document.getElementById('main-cats-grid');
             const todayRecord = ensureDailyRecord(todayStr());
 
             if (isDirector) {
@@ -861,6 +913,8 @@
                 if(navAttendanceBtn) navAttendanceBtn.style.display = 'flex';
                 if(profileDirectorControls) profileDirectorControls.style.display = 'block';
                 if(profileSelfService) profileSelfService.style.display = 'none';
+                if(skladBtn) skladBtn.style.display = 'block';
+                if(mainCatsGrid) mainCatsGrid.style.gridTemplateColumns = 'repeat(4, 1fr)';
                 document.getElementById('attendance-date-picker').value = todayStr();
                 window.renderAttendanceTab(todayStr());
             } else if (isManager) {
@@ -875,6 +929,22 @@
                 if(navAttendanceBtn) navAttendanceBtn.style.display = 'none';
                 if(profileDirectorControls) profileDirectorControls.style.display = 'none';
                 if(profileSelfService) profileSelfService.style.display = 'block';
+                if(skladBtn) skladBtn.style.display = 'none';
+                if(mainCatsGrid) mainCatsGrid.style.gridTemplateColumns = 'repeat(3, 1fr)';
+            } else if (isAdmin) {
+                document.getElementById('director-dashboard-content').style.display = 'block';
+                document.getElementById('daromad-content').style.display = 'none';
+                document.getElementById('director-employee-controls').style.display = 'block';
+                document.getElementById('director-shift-controls').style.display = 'none';
+                if(navEmpBtn) navEmpBtn.style.display = 'flex';
+                if(navTitle0) navTitle0.textContent = 'Boshqaruv';
+                if(managerSubmitContainer) managerSubmitContainer.style.display = 'none';
+                if(directorStatusBanner) directorStatusBanner.style.display = 'none';
+                if(navAttendanceBtn) navAttendanceBtn.style.display = 'none';
+                if(profileDirectorControls) profileDirectorControls.style.display = 'none';
+                if(profileSelfService) profileSelfService.style.display = 'none';
+                if(skladBtn) skladBtn.style.display = 'none';
+                if(mainCatsGrid) mainCatsGrid.style.gridTemplateColumns = 'repeat(3, 1fr)';
             } else if (isUniversalOrTrainerOrKassa) {
                 document.getElementById('director-dashboard-content').style.display = 'none';
                 document.getElementById('daromad-content').style.display = 'block';
@@ -885,23 +955,28 @@
                 if(navAttendanceBtn) navAttendanceBtn.style.display = 'none';
                 if(profileDirectorControls) profileDirectorControls.style.display = 'none';
                 if(profileSelfService) profileSelfService.style.display = 'block';
+                if(skladBtn) skladBtn.style.display = 'none';
+                if(mainCatsGrid) mainCatsGrid.style.gridTemplateColumns = 'repeat(3, 1fr)';
             }
 
-            if (!isDirector) {
-                let myEmpIndex = window.employees.findIndex(e => e.name === window.currentLoggedInUser.name);
-                let myEmp = myEmpIndex > -1 ? window.employees[myEmpIndex] : null;
-                document.getElementById('profile-phone-input').value = (myEmp && myEmp.phone) || '';
-                document.getElementById('profile-rate-input').value = (myEmp && myEmp.hourlyRate) || '';
+            if (!isDirector && (isManager || isUniversalOrTrainerOrKassa)) {
+                renderProfileSelfServiceState();
             }
 
             switchMainCategory('kelgan');
             renderShiftList();
             renderEmployeeList();
             refreshMyShiftStatus();
+
+            if (window.shiftGateInterval) clearInterval(window.shiftGateInterval);
+            if (!isDirector) {
+                window.shiftGateInterval = setInterval(refreshMyShiftStatus, 20000);
+            }
         }
 
         window.logout = function() {
             stopShiftTimer();
+            if (window.shiftGateInterval) { clearInterval(window.shiftGateInterval); window.shiftGateInterval = null; }
             window.currentLoggedInUser = null;
             document.getElementById('password-input').value = "";
             document.getElementById('app-section').classList.add('hidden-section');
@@ -916,11 +991,14 @@
             document.getElementById('mcat-btn-kelgan').classList.remove('active');
             document.getElementById('mcat-btn-astatka').classList.remove('active');
             document.getElementById('mcat-btn-hisobot').classList.remove('active');
+            document.getElementById('mcat-btn-sklad').classList.remove('active');
 
             document.getElementById('mcat-btn-' + catType).classList.add('active');
 
             if (catType === 'hisobot') {
                 renderHisobotView();
+            } else if (catType === 'sklad') {
+                renderSkladView();
             } else {
                 renderAstatkaCategories();
             }
@@ -1107,6 +1185,97 @@
             container.appendChild(listDiv);
         }
 
+        // ================= SKLAD: TOVARLARNI QO'SHISH VA O'CHIRISH (FAQAT DIREKTOR) =================
+        function renderSkladView() {
+            if (!window.currentLoggedInUser || !window.currentLoggedInUser.isDirector) return;
+            const container = document.getElementById('astatka-main-container');
+            container.innerHTML = `<button class="action-btn" style="margin-bottom:15px;" onclick="openAddProductModal()">+ Yangi tovar qo'shish</button>`;
+
+            let catNames = Object.keys(window.astatkaStructure);
+            catNames.forEach((catName, catIndex) => {
+                let products = window.astatkaStructure[catName];
+                let rowsHtml = products.map((prodName, prodIndex) => `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 12px;">
+                        <span style="color: white;">🔹 ${prodName}</span>
+                        <button onclick="deleteProduct(${catIndex}, ${prodIndex})" style="background:none; border:none; color:#e74c3c; cursor:pointer; font-weight:600; font-size:12px;">O'chirish</button>
+                    </div>
+                `).join('');
+
+                let card = document.createElement('div');
+                card.className = 'employee-card';
+                card.style.cssText = "flex-direction: column; align-items: stretch; cursor: default;";
+                card.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <h3 style="color:#fccf0d; font-size:15px;">📂 ${catName}</h3>
+                        <span class="employee-role">${products.length} ta mahsulot</span>
+                    </div>
+                    <div style="background: rgba(0,0,0,0.15); padding: 8px 12px; border-radius: 10px;">
+                        ${rowsHtml || '<span style="color:#9ca3af; font-size:12px;">Mahsulot yo\'q</span>'}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        window.openAddProductModal = function() {
+            if (!window.currentLoggedInUser.isDirector) return;
+            const select = document.getElementById('sklad-cat-select');
+            select.innerHTML = '<option value="__new__">+ Yangi kategoriya yaratish</option>';
+            Object.keys(window.astatkaStructure).forEach(catName => {
+                let opt = document.createElement('option');
+                opt.value = catName;
+                opt.textContent = catName;
+                select.appendChild(opt);
+            });
+            document.getElementById('sklad-new-cat-name').value = "";
+            document.getElementById('sklad-product-name').value = "";
+            window.toggleSkladNewCatInput();
+            document.getElementById('sklad-modal').classList.add('open');
+        }
+
+        window.closeAddProductModal = function() { document.getElementById('sklad-modal').classList.remove('open'); }
+
+        window.toggleSkladNewCatInput = function() {
+            const select = document.getElementById('sklad-cat-select');
+            const newCatGroup = document.getElementById('sklad-new-cat-group');
+            newCatGroup.style.display = (select.value === '__new__') ? 'block' : 'none';
+        }
+
+        window.saveNewProduct = async function() {
+            if (!window.currentLoggedInUser.isDirector) return;
+            const select = document.getElementById('sklad-cat-select');
+            const prodName = document.getElementById('sklad-product-name').value.trim();
+            let catName = select.value;
+
+            if (catName === '__new__') {
+                catName = document.getElementById('sklad-new-cat-name').value.trim();
+                if (!catName) { alert("Kategoriya nomini kiriting!"); return; }
+            }
+            if (!prodName) { alert("Tovar nomini kiriting!"); return; }
+
+            if (!window.astatkaStructure[catName]) window.astatkaStructure[catName] = [];
+            if (window.astatkaStructure[catName].includes(prodName)) { alert("Bu tovar shu kategoriyada allaqachon mavjud!"); return; }
+
+            window.astatkaStructure[catName].push(prodName);
+            await window.saveToFirestore();
+            window.closeAddProductModal();
+            renderSkladView();
+            alert("Tovar muvaffaqiyatli qo'shildi!");
+        }
+
+        window.deleteProduct = async function(catIndex, prodIndex) {
+            if (!window.currentLoggedInUser.isDirector) return;
+            let catNames = Object.keys(window.astatkaStructure);
+            let catName = catNames[catIndex];
+            if (!catName) return;
+            let prodName = window.astatkaStructure[catName][prodIndex];
+            if (!confirm(`"${prodName}" tovarini ro'yxatdan o'chirmoqchimisiz?`)) return;
+
+            window.astatkaStructure[catName].splice(prodIndex, 1);
+            await window.saveToFirestore();
+            renderSkladView();
+        }
+
         window.submitAstatkaToDirector = async function() {
             if (confirm("Hamma kechgi obshiy hisobotni direktorga yuborishni tasdiqlaysizmi?")) {
                 let todayRecord = ensureDailyRecord(todayStr());
@@ -1234,7 +1403,7 @@
         }
 
         window.openEmpModal = function(editIndex = null) {
-            if (!window.currentLoggedInUser.isDirector) return;
+            if (!isDirectorOrAdmin()) return;
             if (editIndex !== null) {
                 document.getElementById('emp-modal-title').textContent = "Ishchini tahrirlash";
                 document.getElementById('edit-emp-index').value = editIndex;
@@ -1257,7 +1426,7 @@
         window.closeEmpModal = function() { document.getElementById('employee-modal').classList.remove('open'); }
 
         window.saveEmployee = async function() {
-            if (!window.currentLoggedInUser.isDirector) return;
+            if (!isDirectorOrAdmin()) return;
             const name = document.getElementById('emp-name').value.trim();
             const role = document.getElementById('emp-role').value;
             const password = document.getElementById('emp-password').value.trim();
@@ -1278,7 +1447,7 @@
         }
 
         window.deleteEmployee = async function(index) {
-            if (!window.currentLoggedInUser.isDirector) return;
+            if (!isDirectorOrAdmin()) return;
             if (confirm(`Rostdan ham "${window.employees[index].name}" ni o'chirmoqchimisiz?`)) {
                 window.employees.splice(index, 1);
                 await window.saveToFirestore();
@@ -1290,24 +1459,40 @@
             container.innerHTML = "";
             if (window.currentLoggedInUser && (window.currentLoggedInUser.role === 'Universal xodim' || window.currentLoggedInUser.role === 'Trener' || window.currentLoggedInUser.role === 'Kassa razdacha')) return;
 
+            const roleOrder = ["Universal xodim", "Trener", "Kassa razdacha", "Meneger", "Admin"];
+            let grouped = {};
             window.employees.forEach((emp, index) => {
-                let card = document.createElement('div');
-                card.className = 'employee-card';
-                card.innerHTML = `
-                    <div class="employee-info">
-                        <h3>${emp.name}</h3>
-                        <span class="employee-role">${emp.role}</span>
-                        ${emp.phone ? `<div style="font-size:11px; color:#d1d5db; margin-top:4px;">📞 ${emp.phone}</div>` : ''}
-                        ${emp.hourlyRate ? `<div style="font-size:11px; color:#34d399; margin-top:2px;">💰 ${Number(emp.hourlyRate).toLocaleString()} so'm/soat</div>` : ''}
-                    </div>
-                    ${window.currentLoggedInUser && window.currentLoggedInUser.isDirector ? `
-                        <div style="display: flex; gap: 10px; align-items: center;">
-                            <button onclick="openEmpModal(${index})" style="background:none; border:none; color:#fccf0d; cursor:pointer; font-weight:600; font-size:12px;">Tahrirlash</button>
-                            <button onclick="deleteEmployee(${index})" style="background:none; border:none; color:#e74c3c; cursor:pointer; font-weight:600; font-size:12px;">O'chirish</button>
+                let r = emp.role || 'Boshqa';
+                if (!grouped[r]) grouped[r] = [];
+                grouped[r].push({ emp, index });
+            });
+            let orderedRoles = [...roleOrder.filter(r => grouped[r]), ...Object.keys(grouped).filter(r => !roleOrder.includes(r))];
+
+            orderedRoles.forEach(role => {
+                let header = document.createElement('h3');
+                header.textContent = `📁 ${role} (${grouped[role].length})`;
+                header.style.cssText = "color:#fccf0d; font-size:14px; margin: 18px 0 8px 0;";
+                container.appendChild(header);
+
+                grouped[role].forEach(({ emp, index }) => {
+                    let card = document.createElement('div');
+                    card.className = 'employee-card';
+                    card.innerHTML = `
+                        <div class="employee-info">
+                            <h3>${emp.name}</h3>
+                            <span class="employee-role">${emp.role}</span>
+                            ${emp.phone ? `<div style="font-size:11px; color:#d1d5db; margin-top:4px;">📞 ${emp.phone}</div>` : ''}
+                            ${emp.hourlyRate ? `<div style="font-size:11px; color:#34d399; margin-top:2px;">💰 ${Number(emp.hourlyRate).toLocaleString()} so'm/soat</div>` : ''}
                         </div>
-                    ` : ''}
-                `;
-                container.appendChild(card);
+                        ${isDirectorOrAdmin() ? `
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <button onclick="openEmpModal(${index})" style="background:none; border:none; color:#fccf0d; cursor:pointer; font-weight:600; font-size:12px;">Tahrirlash</button>
+                                <button onclick="deleteEmployee(${index})" style="background:none; border:none; color:#e74c3c; cursor:pointer; font-weight:600; font-size:12px;">O'chirish</button>
+                            </div>
+                        ` : ''}
+                    `;
+                    container.appendChild(card);
+                });
             });
         }
 
@@ -1366,12 +1551,36 @@
         window.saveProfileSelfService = async function() {
             let idx = window.employees.findIndex(e => e.name === window.currentLoggedInUser.name);
             if (idx === -1) return;
+            if (window.employees[idx].selfServiceLocked) { alert("Ma'lumotlar allaqachon kiritilgan. O'zgartirish uchun Direktor yoki Adminga murojaat qiling."); return; }
             const phone = document.getElementById('profile-phone-input').value.trim();
             const rate = parseFloat(document.getElementById('profile-rate-input').value) || 0;
+            if (!phone || !rate) { alert("Telefon raqami va soatlik stavkani to'liq kiriting!"); return; }
+            if (!confirm("Diqqat! Telefon raqami va soatlik stavkani faqat bir marta o'zingiz kirita olasiz. Keyinchalik faqat Direktor yoki Admin o'zgartira oladi. Davom etasizmi?")) return;
             window.employees[idx].phone = phone;
             window.employees[idx].hourlyRate = rate;
+            window.employees[idx].selfServiceLocked = true;
             await window.saveToFirestore();
-            alert("Ma'lumotlar saqlandi!");
+            renderProfileSelfServiceState();
+            alert("Ma'lumotlar saqlandi va qulflandi!");
+        }
+
+        function renderProfileSelfServiceState() {
+            if (!window.currentLoggedInUser || window.currentLoggedInUser.isDirector) return;
+            let myEmp = window.employees.find(e => e.name === window.currentLoggedInUser.name);
+            const phoneInput = document.getElementById('profile-phone-input');
+            const rateInput = document.getElementById('profile-rate-input');
+            const saveBtn = document.getElementById('profile-selfservice-save-btn');
+            const lockMsg = document.getElementById('profile-selfservice-lock-msg');
+            if (!phoneInput || !rateInput) return;
+
+            phoneInput.value = (myEmp && myEmp.phone) || '';
+            rateInput.value = (myEmp && myEmp.hourlyRate) || '';
+
+            let locked = myEmp && myEmp.selfServiceLocked;
+            phoneInput.disabled = !!locked;
+            rateInput.disabled = !!locked;
+            if (saveBtn) saveBtn.style.display = locked ? 'none' : 'block';
+            if (lockMsg) lockMsg.style.display = locked ? 'block' : 'none';
         }
 
         // ================= SMENA: BOSHLASH / YAKUNLASH / REAL-TIME DAROMAD =================
@@ -1400,12 +1609,28 @@
             }
 
             if (!att || !att.start) {
-                container.innerHTML = `
-                    <div class="employee-card" style="flex-direction:column; align-items:stretch; cursor:default;">
-                        <h3 style="color:white; margin-bottom:6px;">Bugungi smena: ${dayInfo.start} - ${dayInfo.end}</h3>
-                        <button class="action-btn" style="margin:8px 0 0 0;" onclick="startShiftFlow()">🟢 Smenani boshlash</button>
-                    </div>
-                `;
+                let [sh, sm] = dayInfo.start.split(':').map(Number);
+                let shiftStartDate = new Date();
+                shiftStartDate.setHours(sh, sm, 0, 0);
+                let activationTime = new Date(shiftStartDate.getTime() - 5 * 60000);
+                let now = new Date();
+
+                if (now < activationTime) {
+                    let diffMin = Math.ceil((activationTime - now) / 60000);
+                    container.innerHTML = `
+                        <div class="employee-card" style="flex-direction:column; align-items:stretch; cursor:default;">
+                            <h3 style="color:white; margin-bottom:6px;">Bugungi smena: ${dayInfo.start} - ${dayInfo.end}</h3>
+                            <p style="color:#d1d5db; font-size:12px;">🟡 Smenani boshlash tugmasi <b style="color:#fccf0d;">${diffMin} daqiqadan</b> so'ng faollashadi</p>
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML = `
+                        <div class="employee-card" style="flex-direction:column; align-items:stretch; cursor:default;">
+                            <h3 style="color:white; margin-bottom:6px;">Bugungi smena: ${dayInfo.start} - ${dayInfo.end}</h3>
+                            <button class="action-btn" style="margin:8px 0 0 0;" onclick="startShiftFlow()">🟢 Smenani boshlash</button>
+                        </div>
+                    `;
+                }
                 stopShiftTimer();
             } else if (att.start && !att.end) {
                 container.innerHTML = `
