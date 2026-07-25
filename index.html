@@ -290,14 +290,14 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0 15px;
+            padding: 0 6px;
             z-index: 999;
         }
         .nav-item {
-            display: flex; flex-direction: column; align-items: center; justify-content: center; color: #9ca3af; cursor: pointer; transition: all 0.3s; flex: 1;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; color: #9ca3af; cursor: pointer; transition: all 0.3s; flex: 1; min-width: 0;
         }
-        .nav-item svg { width: 24px; height: 24px; margin-bottom: 6px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: all 0.3s;}
-        .nav-item span { font-size: 11px; font-weight: 500; }
+        .nav-item svg { width: 20px; height: 20px; margin-bottom: 4px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: all 0.3s;}
+        .nav-item span { font-size: 9.5px; font-weight: 500; white-space: nowrap; }
         .nav-item.active { color: #fccf0d; }
         .nav-item.active svg { transform: translateY(-3px); }
 
@@ -394,9 +394,9 @@
                 <div id="daromad-content" class="empty-page" style="display: none; padding-top: 50px;">
                     <h2>Kunlik Daromad</h2>
                     <div class="category-card" style="margin-top: 20px; text-align: left; padding: 20px;">
-                        <p style="color: #d1d5db; font-size: 14px;">Bugungi tushum:</p>
-                        <h3 style="color: #fccf0d; font-size: 26px; margin: 10px 0;">4,250,000 UZS</h3>
-                        <p style="color: #9ca3af; font-size: 12px;">So'nggi yangilanish: Hozir</p>
+                        <p id="daromad-earn-label" style="color: #d1d5db; font-size: 14px;">Bugungi ishlab topganingiz:</p>
+                        <h3 id="daromad-earn-value" style="color: #fccf0d; font-size: 26px; margin: 10px 0;">0 so'm</h3>
+                        <p style="color: #9ca3af; font-size: 12px;">Smenani boshlashingiz bilan hisoblanadi</p>
                     </div>
                     <div id="my-shift-status" style="margin-top: 15px; text-align: left;"></div>
                 </div>
@@ -457,6 +457,16 @@
                 <div id="attendance-list-container"></div>
             </div>
 
+            <!-- TAB 6: TEST (hammaga) -->
+            <div id="tab-test" class="tab-content">
+                <iframe id="test-iframe" style="width:100%; height: calc(100vh - 230px); border: none; border-radius: 20px; background:#0B0912;"></iframe>
+            </div>
+
+            <!-- TAB 7: TEST NATIJALARI (faqat direktor) -->
+            <div id="tab-testresults" class="tab-content">
+                <div id="testresults-list-container"></div>
+            </div>
+
             <!-- Pastki Taskbar -->
             <div class="bottom-taskbar">
                 <div class="nav-item active" onclick="switchTab(0, this)">
@@ -471,9 +481,17 @@
                     <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
                     <span>Smenalar</span>
                 </div>
+                <div class="nav-item" onclick="switchTab(5, this)">
+                    <svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+                    <span>Test</span>
+                </div>
                 <div class="nav-item" id="nav-attendance-btn" style="display:none;" onclick="switchTab(4, this)">
                     <svg viewBox="0 0 24 24"><path d="M12 8v4l3 3"></path><circle cx="12" cy="12" r="9"></circle></svg>
                     <span>Ish soati</span>
+                </div>
+                <div class="nav-item" id="nav-testresults-btn" style="display:none;" onclick="switchTab(6, this)">
+                    <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+                    <span>Natijalar</span>
                 </div>
                 <div class="nav-item" onclick="switchTab(3, this)">
                     <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
@@ -612,6 +630,38 @@
         </div>
     </div>
 
+    <!-- MODAL: BUGUNGI/BIR KUNLIK SMENANI O'ZGARTIRISH -->
+    <div id="shift-override-modal" class="modal">
+        <div class="modal-content">
+            <h2>Smenani o'zgartirish</h2>
+            <p style="color:#d1d5db; font-size:12px; margin-bottom:10px;">
+                <b id="override-emp-name-display" style="color:#fccf0d;"></b> uchun <b id="override-date-display" style="color:#fccf0d;"></b> kunidagi smena
+            </p>
+            <div class="input-group">
+                <label>Holati</label>
+                <select id="override-status-select" onchange="toggleOverrideTimeInputs()">
+                    <option value="work">Ish kuni</option>
+                    <option value="off">Dam olish</option>
+                </select>
+            </div>
+            <div id="override-time-group" style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div class="input-group">
+                    <label>Boshlanish</label>
+                    <input type="time" id="override-start-input">
+                </div>
+                <div class="input-group">
+                    <label>Tugash</label>
+                    <input type="time" id="override-end-input">
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button class="cancel-btn" onclick="closeShiftOverrideModal()">Bekor qilish</button>
+                <button class="login-btn" style="margin-top:0; flex:1;" onclick="saveShiftOverride()">Saqlash</button>
+            </div>
+            <button class="action-btn" style="margin-top:10px; background: rgba(231,76,60,0.15); color:#e74c3c;" onclick="clearShiftOverride()">🗑️ Standart jadvalga qaytarish</button>
+        </div>
+    </div>
+
     <!-- MODAL: SKLADGA YANGI TOVAR QO'SHISH -->
     <div id="sklad-modal" class="modal">
         <div class="modal-content">
@@ -698,6 +748,8 @@
         window.weeklyShifts = {};
         window.dailyRecords = {}; // { 'YYYY-MM-DD': { savedValues:{}, submittedValues:null } }
         window.attendance = {}; // { 'YYYY-MM-DD': { empName: {start:'HH:MM:SS', end:'HH:MM:SS'} } }
+        window.dailyShiftOverrides = {}; // { 'YYYY-MM-DD': { empName: {start:'HH:MM', end:'HH:MM'} } }
+        window.testResults = []; // [{ name, surname, contact, ok, err, total, pct, date, topicsCount }]
         window.directorPassword = '1234';
         window.currentLoggedInUser = null;
         window.currentMainCategory = 'kelgan';
@@ -764,6 +816,8 @@
                     weeklyShifts: {},
                     dailyRecords: {},
                     attendance: {},
+                    dailyShiftOverrides: {},
+                    testResults: [],
                     directorPassword: '1234',
                     astatkaStructure: defaultAstatkaStructure
                 });
@@ -786,6 +840,14 @@
                     mergeUpdate.directorPassword = data.directorPassword || '1234';
                     needsMerge = true;
                 }
+                if (!data.testResults) {
+                    mergeUpdate.testResults = [];
+                    needsMerge = true;
+                }
+                if (!data.dailyShiftOverrides) {
+                    mergeUpdate.dailyShiftOverrides = {};
+                    needsMerge = true;
+                }
                 if (needsMerge) await setDoc(docRef, mergeUpdate, { merge: true });
             }
 
@@ -797,6 +859,8 @@
                     window.weeklyShifts = data.weeklyShifts || {};
                     window.dailyRecords = data.dailyRecords || {};
                     window.attendance = data.attendance || {};
+                    window.dailyShiftOverrides = data.dailyShiftOverrides || {};
+                    window.testResults = data.testResults || [];
                     window.directorPassword = data.directorPassword || '1234';
                     window.astatkaStructure = data.astatkaStructure || defaultAstatkaStructure;
 
@@ -817,6 +881,9 @@
                         if (document.getElementById('tab-attendance').classList.contains('active-tab')) {
                             window.renderAttendanceTab(document.getElementById('attendance-date-picker').value || todayStr());
                         }
+                        if (document.getElementById('tab-testresults').classList.contains('active-tab')) {
+                            window.renderTestResultsTab();
+                        }
                     }
                 }
                 document.getElementById('loading-screen').classList.add('hidden');
@@ -830,6 +897,8 @@
                 weeklyShifts: window.weeklyShifts,
                 dailyRecords: window.dailyRecords,
                 attendance: window.attendance,
+                dailyShiftOverrides: window.dailyShiftOverrides,
+                testResults: window.testResults,
                 directorPassword: window.directorPassword,
                 astatkaStructure: window.astatkaStructure
             });
@@ -895,6 +964,7 @@
             const managerSubmitContainer = document.getElementById('manager-submit-container');
             const directorStatusBanner = document.getElementById('director-status-banner');
             const navAttendanceBtn = document.getElementById('nav-attendance-btn');
+            const navTestResultsBtn = document.getElementById('nav-testresults-btn');
             const profileDirectorControls = document.getElementById('profile-director-controls');
             const profileSelfService = document.getElementById('profile-selfservice');
             const skladBtn = document.getElementById('mcat-btn-sklad');
@@ -911,6 +981,7 @@
                 if(managerSubmitContainer) managerSubmitContainer.style.display = 'none';
                 if(directorStatusBanner) directorStatusBanner.style.display = todayRecord.submittedValues ? 'block' : 'none';
                 if(navAttendanceBtn) navAttendanceBtn.style.display = 'flex';
+                if(navTestResultsBtn) navTestResultsBtn.style.display = 'flex';
                 if(profileDirectorControls) profileDirectorControls.style.display = 'block';
                 if(profileSelfService) profileSelfService.style.display = 'none';
                 if(skladBtn) skladBtn.style.display = 'block';
@@ -927,6 +998,7 @@
                 if(managerSubmitContainer) managerSubmitContainer.style.display = 'block';
                 if(directorStatusBanner) directorStatusBanner.style.display = 'none';
                 if(navAttendanceBtn) navAttendanceBtn.style.display = 'none';
+                if(navTestResultsBtn) navTestResultsBtn.style.display = 'none';
                 if(profileDirectorControls) profileDirectorControls.style.display = 'none';
                 if(profileSelfService) profileSelfService.style.display = 'block';
                 if(skladBtn) skladBtn.style.display = 'none';
@@ -941,6 +1013,7 @@
                 if(managerSubmitContainer) managerSubmitContainer.style.display = 'none';
                 if(directorStatusBanner) directorStatusBanner.style.display = 'none';
                 if(navAttendanceBtn) navAttendanceBtn.style.display = 'none';
+                if(navTestResultsBtn) navTestResultsBtn.style.display = 'none';
                 if(profileDirectorControls) profileDirectorControls.style.display = 'none';
                 if(profileSelfService) profileSelfService.style.display = 'none';
                 if(skladBtn) skladBtn.style.display = 'none';
@@ -953,6 +1026,7 @@
                 if(navEmpBtn) navEmpBtn.style.display = 'none';
                 if(navTitle0) navTitle0.textContent = 'Daromad';
                 if(navAttendanceBtn) navAttendanceBtn.style.display = 'none';
+                if(navTestResultsBtn) navTestResultsBtn.style.display = 'none';
                 if(profileDirectorControls) profileDirectorControls.style.display = 'none';
                 if(profileSelfService) profileSelfService.style.display = 'block';
                 if(skladBtn) skladBtn.style.display = 'none';
@@ -1585,9 +1659,19 @@
 
         // ================= SMENA: BOSHLASH / YAKUNLASH / REAL-TIME DAROMAD =================
         function getMyTodaySchedule() {
+            let dateStr = todayStr();
+            let override = (window.dailyShiftOverrides[dateStr] || {})[window.currentLoggedInUser.name];
+            if (override) return override;
             let sched = window.weeklyShifts[window.currentLoggedInUser.name] || [];
             let today = todayWeekDayName();
             return sched.find(d => d.day === today) || null;
+        }
+
+        function updateDaromadCard(label, value) {
+            const labelEl = document.getElementById('daromad-earn-label');
+            const valueEl = document.getElementById('daromad-earn-value');
+            if (labelEl) labelEl.textContent = label;
+            if (valueEl) valueEl.textContent = value;
         }
 
         function refreshMyShiftStatus() {
@@ -1604,6 +1688,7 @@
                         <div class="employee-info"><h3>Bugun (${todayWeekDayName()})</h3><span class="employee-role" style="background: rgba(231,76,60,0.2); color:#e74c3c;">Dam olish kuni</span></div>
                     </div>
                 `;
+                updateDaromadCard("Bugun dam olish kuni:", "0 so'm");
                 stopShiftTimer();
                 return;
             }
@@ -1631,6 +1716,7 @@
                         </div>
                     `;
                 }
+                updateDaromadCard("Bugungi ishlab topganingiz:", "0 so'm");
                 stopShiftTimer();
             } else if (att.start && !att.end) {
                 container.innerHTML = `
@@ -1641,6 +1727,7 @@
                         <button class="action-btn" style="margin:8px 0 0 0; background:#e74c3c; color:white;" onclick="endShiftFlow()">🔴 Smenani yakunlash</button>
                     </div>
                 `;
+                updateDaromadCard("Hozircha ishlab topganingiz (jonli):", computeShiftEarnings(att.start, nowTimeStr()).toLocaleString() + " so'm");
                 startShiftTimer(att.start);
             } else {
                 let earned = computeShiftEarnings(att.start, att.end);
@@ -1651,6 +1738,7 @@
                         <p style="color:#34d399; font-size:14px; font-weight:700; margin-top:4px;">Jami ishlab topgani: ${earned.toLocaleString()} so'm</p>
                     </div>
                 `;
+                updateDaromadCard("Bugungi jami ishlab topganingiz:", earned.toLocaleString() + " so'm");
                 stopShiftTimer();
             }
         }
@@ -1680,8 +1768,10 @@
                 let s = String(diff % 60).padStart(2, '0');
                 let elapsedEl = document.getElementById('shift-elapsed-time');
                 let earnEl = document.getElementById('shift-earnings');
+                let liveEarn = computeShiftEarnings(startStr, nowTimeStr());
                 if (elapsedEl) elapsedEl.textContent = `${h}:${m}:${s}`;
-                if (earnEl) earnEl.textContent = computeShiftEarnings(startStr, nowTimeStr()).toLocaleString() + ' so\'m';
+                if (earnEl) earnEl.textContent = liveEarn.toLocaleString() + ' so\'m';
+                updateDaromadCard("Hozircha ishlab topganingiz (jonli):", liveEarn.toLocaleString() + " so'm");
             }, 1000);
         }
 
@@ -1773,18 +1863,25 @@
             container.innerHTML = "";
             let dayAttendance = window.attendance[dateStr] || {};
 
-            let anyone = false;
+            if (window.employees.length === 0) {
+                container.innerHTML = `<div class="empty-page" style="padding-top:60px;"><h2>Ma'lumot yo'q</h2><p>Hozircha ishchilar mavjud emas</p></div>`;
+                return;
+            }
+
             window.employees.forEach(emp => {
                 let sched = window.weeklyShifts[emp.name] || [];
                 let d = new Date(dateStr + 'T00:00:00');
                 let weekDayName = weekDays[weekDayIndexMap[d.getDay()]];
-                let dayInfo = sched.find(s => s.day === weekDayName);
-                if (!dayInfo || dayInfo.status === 'off') return; // shu kuni smenasi yo'q
+                let override = (window.dailyShiftOverrides[dateStr] || {})[emp.name];
+                let baseInfo = sched.find(s => s.day === weekDayName);
+                let dayInfo = override || baseInfo;
+                let isWorkDay = dayInfo && dayInfo.status !== 'off';
 
-                anyone = true;
                 let att = dayAttendance[emp.name];
                 let statusHtml = '';
-                if (!att || !att.start) {
+                if (!isWorkDay) {
+                    statusHtml = `<span class="employee-role" style="background: rgba(255,255,255,0.08); color:#9ca3af;">Bu kun dam olish</span>`;
+                } else if (!att || !att.start) {
                     statusHtml = `<span class="employee-role" style="background: rgba(231,76,60,0.2); color:#e74c3c;">Ishga kelmadi</span>`;
                 } else if (att.start && !att.end) {
                     statusHtml = `<span class="employee-role" style="background: rgba(252,207,13,0.2); color:#fccf0d;">Keldi: ${att.start} (hali ishda)</span>`;
@@ -1792,22 +1889,89 @@
                     statusHtml = `<span class="employee-role" style="background: rgba(52,211,153,0.2); color:#34d399;">Keldi: ${att.start} | Ketdi: ${att.end}</span>`;
                 }
 
+                let scheduleLine = isWorkDay
+                    ? `Jadval: ${dayInfo.start} - ${dayInfo.end}${override ? " (o'zgartirilgan)" : ''}`
+                    : (override ? "Dam olish (o'zgartirilgan)" : "Bu kunga rejalashtirilgan smena yo'q");
+
                 let card = document.createElement('div');
                 card.className = 'employee-card';
-                card.style.cursor = 'default';
+                card.style.cssText = 'cursor:default; flex-direction: column; align-items: stretch;';
                 card.innerHTML = `
-                    <div class="employee-info">
-                        <h3>${emp.name}</h3>
-                        <span style="font-size:11px; color:#d1d5db;">${emp.role} | Jadval: ${dayInfo.start} - ${dayInfo.end}</span><br>
-                        ${statusHtml}
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
+                        <div class="employee-info">
+                            <h3>${emp.name}</h3>
+                            <span style="font-size:11px; color:#d1d5db;">${emp.role} | ${scheduleLine}</span><br>
+                            ${statusHtml}
+                        </div>
+                        <button onclick="openShiftOverrideModal(${window.employees.indexOf(emp)}, '${dateStr}')" style="background:none; border:none; color:#fccf0d; cursor:pointer; font-weight:600; font-size:12px; white-space:nowrap;">✏️ O'zgartirish</button>
                     </div>
                 `;
                 container.appendChild(card);
             });
+        }
 
-            if (!anyone) {
-                container.innerHTML = `<div class="empty-page" style="padding-top:60px;"><h2>Ma'lumot yo'q</h2><p>Bu kunga rejalashtirilgan smena topilmadi</p></div>`;
+        // ================= BIR KUNLIK SMENANI O'ZGARTIRISH (OVERRIDE) =================
+        window.openShiftOverrideModal = function(empIndex, dateStr) {
+            if (!window.currentLoggedInUser.isDirector) return;
+            let emp = window.employees[empIndex];
+            if (!emp) return;
+            window.overrideTargetEmpName = emp.name;
+            window.overrideTargetDate = dateStr;
+
+            document.getElementById('override-emp-name-display').textContent = emp.name;
+            document.getElementById('override-date-display').textContent = dateStr;
+
+            let sched = window.weeklyShifts[emp.name] || [];
+            let d = new Date(dateStr + 'T00:00:00');
+            let weekDayName = weekDays[weekDayIndexMap[d.getDay()]];
+            let override = (window.dailyShiftOverrides[dateStr] || {})[emp.name];
+            let baseInfo = sched.find(s => s.day === weekDayName);
+            let current = override || baseInfo || { status: 'work', start: '09:00', end: '18:00' };
+
+            document.getElementById('override-status-select').value = current.status === 'off' ? 'off' : 'work';
+            document.getElementById('override-start-input').value = current.start || '09:00';
+            document.getElementById('override-end-input').value = current.end || '18:00';
+            window.toggleOverrideTimeInputs();
+
+            document.getElementById('shift-override-modal').classList.add('open');
+        }
+
+        window.closeShiftOverrideModal = function() { document.getElementById('shift-override-modal').classList.remove('open'); }
+
+        window.toggleOverrideTimeInputs = function() {
+            const status = document.getElementById('override-status-select').value;
+            document.getElementById('override-time-group').style.display = status === 'off' ? 'none' : 'grid';
+        }
+
+        window.saveShiftOverride = async function() {
+            if (!window.currentLoggedInUser.isDirector) return;
+            const status = document.getElementById('override-status-select').value;
+            const start = document.getElementById('override-start-input').value;
+            const end = document.getElementById('override-end-input').value;
+            const dateStr = window.overrideTargetDate;
+            const empName = window.overrideTargetEmpName;
+
+            if (!window.dailyShiftOverrides[dateStr]) window.dailyShiftOverrides[dateStr] = {};
+            window.dailyShiftOverrides[dateStr][empName] = { status, start, end, day: '' };
+
+            await window.saveToFirestore();
+            window.closeShiftOverrideModal();
+            window.renderAttendanceTab(dateStr);
+            refreshMyShiftStatus();
+            alert("Smena muvaffaqiyatli o'zgartirildi!");
+        }
+
+        window.clearShiftOverride = async function() {
+            if (!window.currentLoggedInUser.isDirector) return;
+            const dateStr = window.overrideTargetDate;
+            const empName = window.overrideTargetEmpName;
+            if (window.dailyShiftOverrides[dateStr]) {
+                delete window.dailyShiftOverrides[dateStr][empName];
             }
+            await window.saveToFirestore();
+            window.closeShiftOverrideModal();
+            window.renderAttendanceTab(dateStr);
+            refreshMyShiftStatus();
         }
 
         window.openShiftModal = function() {
@@ -1914,11 +2078,95 @@
             });
         }
 
+        // ================= TEST (BILIM TESTI) - IFRAME VA NATIJALAR =================
+        window.loadTestIframe = function() {
+            const iframe = document.getElementById('test-iframe');
+            if (!window.currentLoggedInUser) return;
+            let name = encodeURIComponent(window.currentLoggedInUser.name || '');
+            let contactVal = '';
+            if (!window.currentLoggedInUser.isDirector) {
+                let emp = window.employees.find(e => e.name === window.currentLoggedInUser.name);
+                contactVal = (emp && emp.phone) || '';
+            }
+            let contact = encodeURIComponent(contactVal || 'nomer_kiritilmagan');
+            const src = `maxway-test.html?name=${name}&contact=${contact}`;
+            if (!iframe.dataset.loaded || iframe.dataset.loadedFor !== window.currentLoggedInUser.name) {
+                iframe.src = src;
+                iframe.dataset.loaded = 'true';
+                iframe.dataset.loadedFor = window.currentLoggedInUser.name;
+            }
+        }
+
+        window.addEventListener('message', async function(event) {
+            if (!event.data || event.data.type !== 'maxway_test_result') return;
+            let entry = event.data.payload || {};
+            let record = {
+                name: (window.currentLoggedInUser && window.currentLoggedInUser.name) || entry.userName || 'Noma\'lum',
+                contact: entry.userContact || '',
+                mode: entry.mode || 'solo',
+                ok: entry.ok,
+                err: entry.err,
+                total: entry.total,
+                pct: entry.pct,
+                myScore: entry.myScore,
+                botScore: entry.botScore,
+                result: entry.result,
+                topicsCount: entry.topicsCount,
+                date: entry.date || Date.now()
+            };
+            window.testResults.push(record);
+            await window.saveToFirestore();
+            if (window.currentLoggedInUser && window.currentLoggedInUser.isDirector && document.getElementById('tab-testresults').classList.contains('active-tab')) {
+                window.renderTestResultsTab();
+            }
+        });
+
+        window.renderTestResultsTab = function() {
+            if (!window.currentLoggedInUser || !window.currentLoggedInUser.isDirector) return;
+            const container = document.getElementById('testresults-list-container');
+            container.innerHTML = "";
+
+            if (!window.testResults || window.testResults.length === 0) {
+                container.innerHTML = `<div class="empty-page" style="padding-top:60px;"><h2>Natijalar yo'q</h2><p>Xodimlar hali test topshirishmagan</p></div>`;
+                return;
+            }
+
+            let sorted = [...window.testResults].sort((a, b) => (b.date || 0) - (a.date || 0));
+            sorted.forEach(r => {
+                let dateStr = new Date(r.date).toLocaleString('uz-UZ');
+                let card = document.createElement('div');
+                card.className = 'employee-card';
+                card.style.cssText = "cursor:default; flex-direction: column; align-items: stretch;";
+
+                let bodyHtml = '';
+                if (r.mode === 'solo') {
+                    bodyHtml = `
+                        <span style="font-size:12px; color:#d1d5db;">📝 Yakka test | ${r.ok || 0} to'g'ri / ${r.total || 0} savol</span><br>
+                        <span class="employee-role" style="background: ${r.pct >= 70 ? 'rgba(52,211,153,0.2); color:#34d399' : 'rgba(231,76,60,0.2); color:#e74c3c'};">${r.pct || 0}%</span>
+                    `;
+                } else {
+                    bodyHtml = `
+                        <span style="font-size:12px; color:#d1d5db;">⚔️ AI Bot bilan jang | Ball: ${r.myScore || 0} - ${r.botScore || 0}</span><br>
+                        <span class="employee-role" style="background: ${r.result === 'win' ? 'rgba(52,211,153,0.2); color:#34d399' : (r.result === 'loss' ? 'rgba(231,76,60,0.2); color:#e74c3c' : 'rgba(252,207,13,0.2); color:#fccf0d')};">${r.result === 'win' ? "G'alaba" : (r.result === 'loss' ? 'Mag\'lubiyat' : 'Durrang')}</span>
+                    `;
+                }
+
+                card.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                        <h3 style="color:white; font-size:15px;">${r.name}</h3>
+                        <span style="font-size:11px; color:#9ca3af;">${dateStr}</span>
+                    </div>
+                    ${bodyHtml}
+                `;
+                container.appendChild(card);
+            });
+        }
+
         window.switchTab = function(index, element) {
             const tabs = document.querySelectorAll('.tab-content');
             const navItems = document.querySelectorAll('.nav-item');
             const isUniversalOrTrainerOrKassa = window.currentLoggedInUser && (window.currentLoggedInUser.role === 'Universal xodim' || window.currentLoggedInUser.role === 'Trener' || window.currentLoggedInUser.role === 'Kassa razdacha');
-            const titles = isUniversalOrTrainerOrKassa ? ["Daromad", "Ishchilar", "Smenalar", "Profil", "Ish soatlari"] : ["Boshqaruv", "Ishchilar", "Smenalar", "Profil", "Ish soatlari"];
+            const titles = isUniversalOrTrainerOrKassa ? ["Daromad", "Ishchilar", "Smenalar", "Profil", "Ish soatlari", "Test", "Test natijalari"] : ["Boshqaruv", "Ishchilar", "Smenalar", "Profil", "Ish soatlari", "Test", "Test natijalari"];
 
             tabs.forEach(tab => tab.classList.remove('active-tab'));
             navItems.forEach(item => item.classList.remove('active'));
@@ -1926,6 +2174,12 @@
             tabs[index].classList.add('active-tab');
             element.classList.add('active');
             document.getElementById('page-title').textContent = titles[index];
+
+            if (index === 5) {
+                window.loadTestIframe();
+            } else if (index === 6) {
+                window.renderTestResultsTab();
+            }
         }
     </script>
 </body>
